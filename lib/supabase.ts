@@ -18,6 +18,16 @@ const hasValidSupabaseConfig = isValidHttpUrl(supabaseUrl) && Boolean(supabaseAn
 
 export const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE !== "false" || !hasValidSupabaseConfig;
 
-export const supabase = !isDemoMode && supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+export const supabase =
+  !isDemoMode && supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          persistSession: true,
+          storageKey: "event-photo-rank-auth"
+        }
+      })
+    : null;
 
 export const maxUploadMb = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB ?? 8);
