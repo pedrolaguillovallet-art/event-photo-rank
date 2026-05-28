@@ -40,8 +40,13 @@ if ($hasChanges) {
   Write-Host "No hay cambios pendientes para commitear." -ForegroundColor DarkGray
 }
 
-$existingRemote = git remote get-url origin 2>$null
-if ($LASTEXITCODE -eq 0 -and $existingRemote) {
+$existingRemote = ""
+$remoteList = git remote
+if ($remoteList -contains "origin") {
+  $existingRemote = git remote get-url origin
+}
+
+if ($existingRemote) {
   Write-Host "Remote origin ya existe: $existingRemote" -ForegroundColor DarkGray
   git push -u origin main
 } else {
