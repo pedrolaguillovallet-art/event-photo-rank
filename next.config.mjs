@@ -1,7 +1,9 @@
+const assetPrefix = process.env.NEXT_PUBLIC_ASSET_PREFIX;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "export",
-  assetPrefix: ".",
+  ...(assetPrefix === "cloudflare" ? {} : { assetPrefix: assetPrefix ?? "." }),
   images: {
     unoptimized: true,
     remotePatterns: [
