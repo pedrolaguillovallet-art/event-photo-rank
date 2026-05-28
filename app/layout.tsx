@@ -11,22 +11,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clearLegacyParticipantSession = `
-try {
-  if (!window.localStorage.getItem("event-photo-rank-auth")) {
-    Object.keys(window.localStorage)
-      .filter((key) => key.startsWith("eventrank-participant-"))
-      .forEach((key) => window.localStorage.removeItem(key));
-  }
-} catch {}
-`;
-
   return (
     <html lang="es">
-      <body>
-        <script dangerouslySetInnerHTML={{ __html: clearLegacyParticipantSession }} />
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
