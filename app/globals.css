@@ -106,13 +106,6 @@ textarea {
   box-shadow: 0 4px 8px rgba(57, 25, 9, 0.28);
 }
 
-form input[placeholder="Tu nombre o apodo"],
-form input[placeholder="Tu nombre o apodo"] + div,
-form input[placeholder="Tu nombre o apodo"] + div + button,
-form:has(input[placeholder="Tu nombre o apodo"]) .my-5 {
-  display: none;
-}
-
 @keyframes heart-pop {
   0% {
     transform: scale(0.92);
