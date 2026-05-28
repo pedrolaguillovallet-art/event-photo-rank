@@ -1,13 +1,23 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
-export const isDemoMode =
-  process.env.NEXT_PUBLIC_DEMO_MODE !== "false" || !supabaseUrl || !supabaseAnonKey;
+function isValidHttpUrl(value: string | undefined) {
+  if (!value) return false;
 
-export const supabase = !isDemoMode
-  ? createClient(supabaseUrl as string, supabaseAnonKey as string)
-  : null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+const hasValidSupabaseConfig = isValidHttpUrl(supabaseUrl) && Boolean(supabaseAnonKey);
+
+export const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE !== "false" || !hasValidSupabaseConfig;
+
+export const supabase = !isDemoMode && supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 export const maxUploadMb = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB ?? 8);
