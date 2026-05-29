@@ -22,15 +22,39 @@ import {
   listPhotos,
   listVotedPhotoIds,
   toggleVote as toggleSupabaseVote,
+  updateEventSettings,
+  updatePhotoFeatured,
   updateUploadsEnabled,
   uploadPhoto
 } from "@/lib/supabase-repository";
+import { supabase } from "@/lib/supabase";
 import type { Event, Participant, Photo, PhotoComment } from "@/lib/types";
 
-const avatarOptions = ["✨", "🎧", "🌸", "⚡", "🎉", "🏆", "💫", "📸"];
+const avatarOptions = ["\u2728", "\ud83c\udfa7", "\ud83c\udf38", "\u26a1", "\ud83c\udf89", "\ud83c\udfc6", "\ud83d\udcab", "\ud83d\udcf8"];
 
 const eventSlug = process.env.NEXT_PUBLIC_EVENT_SLUG ?? "fiesta-aurora";
-const adminPasswordValue = process.env.NEXT_PUBLIC_ADMIN_PASSWORD ?? "eventrank-demo";
+const adminPasswordValue = process.env.NEXT_PUBLIC_ADMIN_PASSWORD ?? "3004";
+
+function getParticipantStorageKey(eventId: string) {
+  return `eventrank-participant-${eventId}`;
+}
+
+function readStoredParticipant(eventId: string) {
+  try {
+    const storedParticipant = window.localStorage.getItem(getParticipantStorageKey(eventId));
+    if (!storedParticipant) return null;
+
+    const parsedParticipant = JSON.parse(storedParticipant) as Participant;
+    return parsedParticipant?.event_id === eventId && parsedParticipant.id && parsedParticipant.display_name ? parsedParticipant : null;
+  } catch {
+    window.localStorage.removeItem(getParticipantStorageKey(eventId));
+    return null;
+  }
+}
+
+function saveStoredParticipant(participant: Participant) {
+  window.localStorage.setItem(getParticipantStorageKey(participant.event_id), JSON.stringify(participant));
+}
 
 export default function HomePage() {
   const [event, setEvent] = useState<Event>(demoEvent);
@@ -88,7 +112,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (isDemoMode) return;
+    if (isDemoMode || !supabase) return;
 
     let cancelled = false;
 
@@ -101,16 +125,21 @@ export default function HomePage() {
         if (cancelled) return;
 
         setEvent(remoteEvent);
-        const storedParticipant = window.localStorage.getItem(`eventrank-participant-${remoteEvent.id}`);
-        const parsedParticipant = storedParticipant ? (JSON.parse(storedParticipant) as Participant) : null;
+        const parsedParticipant = readStoredParticipant(remoteEvent.id);
 
-        if (parsedParticipant?.event_id === remoteEvent.id) {
+        if (parsedParticipant) {
           setParticipant(parsedParticipant);
           setDisplayName(parsedParticipant.display_name);
           setAvatarEmoji(parsedParticipant.avatar_emoji);
+          await refreshRemoteData(remoteEvent, parsedParticipant);
+          setActiveTab("gallery");
+          setAppStatus("idle");
+          setAppMessage("");
+          return;
         }
 
-        await refreshRemoteData(remoteEvent, parsedParticipant?.event_id === remoteEvent.id ? parsedParticipant : null);
+        setParticipant(null);
+        await refreshRemoteData(remoteEvent, null);
         if (!cancelled) {
           setAppStatus("idle");
           setAppMessage("");
@@ -160,7 +189,7 @@ export default function HomePage() {
           }
         : await createParticipant(event.id, cleanName, avatarEmoji);
 
-      window.localStorage.setItem(`eventrank-participant-${event.id}`, JSON.stringify(nextParticipant));
+      saveStoredParticipant(nextParticipant);
       setParticipants((current) => [nextParticipant, ...current.filter((item) => item.id !== nextParticipant.id)]);
       setParticipant(nextParticipant);
       setActiveTab("gallery");
@@ -326,6 +355,25 @@ export default function HomePage() {
     }
   }
 
+  async function toggleFeaturedPhoto(photoId: string) {
+    const targetPhoto = photos.find((photo) => photo.id === photoId);
+    if (!targetPhoto) return;
+
+    const nextValue = !targetPhoto.is_featured;
+    setPhotos((current) => current.map((photo) => (photo.id === photoId ? { ...photo, is_featured: nextValue } : photo)));
+
+    if (!isDemoMode) {
+      try {
+        const updatedPhoto = await updatePhotoFeatured(photoId, nextValue);
+        setPhotos((current) => current.map((photo) => (photo.id === photoId ? updatedPhoto : photo)));
+      } catch (error) {
+        setPhotos((current) => current.map((photo) => (photo.id === photoId ? { ...photo, is_featured: !nextValue } : photo)));
+        setAppStatus("error");
+        setAppMessage(error instanceof Error ? error.message : "No se pudo destacar la foto.");
+      }
+    }
+  }
+
   async function toggleUploads() {
     const nextValue = !event.uploads_enabled;
     setEvent((current) => ({ ...current, uploads_enabled: nextValue }));
@@ -337,6 +385,28 @@ export default function HomePage() {
         setEvent((current) => ({ ...current, uploads_enabled: !nextValue }));
         setAppStatus("error");
         setAppMessage(error instanceof Error ? error.message : "No se pudo cambiar el estado de subidas.");
+      }
+    }
+  }
+
+  async function saveEventSettings(updates: Partial<Pick<Event, "name" | "description" | "cover_image" | "is_active" | "uploads_enabled">>) {
+    const cleanedUpdates = {
+      ...updates,
+      name: updates.name?.trim() || event.name,
+      description: updates.description?.trim() ?? event.description,
+      cover_image: updates.cover_image?.trim() || event.cover_image
+    };
+
+    setEvent((current) => ({ ...current, ...cleanedUpdates }));
+    if (!isDemoMode) {
+      try {
+        const updatedEvent = await updateEventSettings(event.id, cleanedUpdates);
+        setEvent(updatedEvent);
+        setAppStatus("idle");
+        setAppMessage("");
+      } catch (error) {
+        setAppStatus("error");
+        setAppMessage(error instanceof Error ? error.message : "No se pudieron guardar los ajustes.");
       }
     }
   }
@@ -398,7 +468,9 @@ export default function HomePage() {
           onPasswordChange={setAdminPassword}
           onUnlock={() => setAdminUnlocked(adminPassword === adminPasswordValue)}
           onRemovePhoto={removePhoto}
+          onToggleFeatured={toggleFeaturedPhoto}
           onToggleUploads={toggleUploads}
+          onSaveEventSettings={saveEventSettings}
           onExportCsv={exportCsv}
         />
       );
@@ -555,6 +627,9 @@ function JoinScreen({
           ))}
         </div>
         <button className="mt-6 h-14 w-full rounded-2xl bg-coral text-lg font-black text-white shadow-lift">Entrar y subir fotos</button>
+        <p className="mt-4 rounded-2xl bg-cream p-4 text-sm font-semibold leading-6 text-ink/65">
+          Guardaremos este acceso en este dispositivo para que no tengas que entrar otra vez.
+        </p>
       </form>
     </section>
   );
@@ -601,7 +676,7 @@ function UploadScreen({
     <section className="mx-auto max-w-2xl space-y-5">
       <div>
         <p className="text-sm font-black uppercase tracking-[0.18em] text-coral">Subida</p>
-        <h2 className="mt-1 text-3xl font-black text-ink">¡Sube tu mejor momento!</h2>
+        <h2 className="mt-1 text-3xl font-black text-ink">Sube tu mejor momento</h2>
       </div>
       <div className="rounded-[30px] bg-white p-5 shadow-soft">
         <input ref={fileInputRef} className="hidden" type="file" accept="image/*" capture="environment" onChange={onFileChange} />
@@ -739,7 +814,7 @@ function ProjectorMode({
             <div className="mt-4 space-y-3">
               {photoRanking.slice(0, 3).map((photo, index) => (
                 <div key={photo.id} className="flex items-center gap-3">
-                  <span className="text-3xl">{["🥇", "🥈", "🥉"][index]}</span>
+                  <span className="text-3xl">{["\ud83e\udd47", "\ud83e\udd48", "\ud83e\udd49"][index]}</span>
                   <p className="min-w-0 flex-1 truncate font-black">{photo.title ?? photo.participant?.display_name}</p>
                   <span className="font-black text-coral">{photo.vote_count}</span>
                 </div>
