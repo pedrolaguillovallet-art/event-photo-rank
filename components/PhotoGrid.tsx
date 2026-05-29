@@ -23,9 +23,11 @@ const sortOptions: Array<{ id: GallerySort; label: string; helper: string }> = [
 export function PhotoGrid({ photos, likedPhotoIds, sortMode, onSortModeChange, onOpen, onToggleVote }: PhotoGridProps) {
   if (photos.length === 0) {
     return (
-      <div className="rounded-[28px] bg-white p-8 text-center shadow-soft">
-        <p className="text-xl font-black text-ink">Aun no hay fotos</p>
-        <p className="mt-2 text-sm font-medium text-ink/60">Cuando alguien suba una imagen, aparecera aqui ordenada y lista para votar.</p>
+      <div className="cork-board min-h-[360px]">
+        <div className="mx-auto max-w-sm rotate-[-1.5deg] rounded-[6px] bg-white p-8 text-center shadow-soft">
+          <p className="text-xl font-black text-ink">Aun no hay fotos</p>
+          <p className="mt-2 text-sm font-medium text-ink/60">Cuando alguien suba una imagen, aparecera aqui como una polaroid en el tablero.</p>
+        </div>
       </div>
     );
   }
@@ -59,16 +61,19 @@ export function PhotoGrid({ photos, likedPhotoIds, sortMode, onSortModeChange, o
         })}
       </div>
 
-      <div className="masonry">
-        {photos.map((photo) => (
-          <PhotoCard
-            key={photo.id}
-            photo={photo}
-            liked={likedPhotoIds.has(photo.id)}
-            onOpen={onOpen}
-            onToggleVote={onToggleVote}
-          />
-        ))}
+      <div className="cork-board">
+        <span className="cork-board-label">Top momentos del evento</span>
+        <div className="masonry">
+          {photos.map((photo) => (
+            <PhotoCard
+              key={photo.id}
+              photo={photo}
+              liked={likedPhotoIds.has(photo.id)}
+              onOpen={onOpen}
+              onToggleVote={onToggleVote}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
