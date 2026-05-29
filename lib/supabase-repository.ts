@@ -168,6 +168,13 @@ export async function updatePhotoFeatured(photoId: string, isFeatured: boolean):
 
 export async function updateUploadsEnabled(eventId: string, uploadsEnabled: boolean): Promise<Event> {
   if (!supabase) throw new Error("Supabase no esta configurado.");
+  const saveResult = await supabase.rpc("admin_set_uploads_enabled", {
+    target_event_id: eventId,
+    uploads_enabled_value: uploadsEnabled
+  });
+
+  if (!saveResult.error) return saveResult.data as Event;
+
   const rpcResult = await supabase.rpc("admin_update_uploads_enabled", {
     target_event_id: eventId,
     next_uploads_enabled: uploadsEnabled
@@ -187,6 +194,13 @@ export async function updateUploadsEnabled(eventId: string, uploadsEnabled: bool
 
 export async function updateEventSettings(eventId: string, updates: Partial<Pick<Event, "name" | "description" | "cover_image" | "is_active" | "uploads_enabled">>): Promise<Event> {
   if (!supabase) throw new Error("Supabase no esta configurado.");
+  const saveResult = await supabase.rpc("admin_save_event_settings", {
+    target_event_id: eventId,
+    settings: updates
+  });
+
+  if (!saveResult.error) return saveResult.data as Event;
+
   const rpcResult = await supabase.rpc("admin_update_event_settings", {
     target_event_id: eventId,
     next_name: updates.name ?? null,
