@@ -18,9 +18,10 @@ export function PhotoCard({ photo, liked, onOpen, onToggleVote }: PhotoCardProps
   }).format(new Date(photo.created_at));
 
   return (
-    <article className="masonry-item mb-4 overflow-hidden rounded-[22px] bg-white shadow-soft">
-      <button className="relative block w-full text-left" onClick={() => onOpen(photo)}>
-        <img className="h-auto w-full object-cover" src={photo.image_url} alt={photo.title ?? "Foto del evento"} />
+    <article className="polaroid-card masonry-item relative mb-5 transition duration-200">
+      <span className="pushpin" aria-hidden="true" />
+      <button className="relative block w-full overflow-hidden bg-ink text-left shadow-inner" onClick={() => onOpen(photo)}>
+        <img className="aspect-[4/3] w-full object-cover" src={photo.image_url} alt={photo.title ?? "Foto del evento"} />
         {photo.is_featured ? (
           <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-white/95 px-3 py-2 text-xs font-black text-violet shadow-soft">
             <Sparkles size={14} />
@@ -28,25 +29,25 @@ export function PhotoCard({ photo, liked, onOpen, onToggleVote }: PhotoCardProps
           </span>
         ) : null}
       </button>
-      <div className="space-y-3 p-4">
+      <div className="space-y-3 pt-4">
         {photo.participant ? <ParticipantBadge participant={photo.participant} compact /> : null}
-        {photo.title ? <p className="text-sm font-semibold text-ink/80">{photo.title}</p> : null}
+        <p className="min-h-5 text-center text-sm font-semibold text-ink/80">{photo.title || "Momento del evento"}</p>
         <div className="grid grid-cols-3 gap-2 text-xs font-black text-ink/60">
-          <span className="flex items-center gap-1 rounded-full bg-cream px-2 py-2">
+          <span className="flex items-center justify-center gap-1 rounded-full bg-[#f4eadb] px-2 py-2">
             <CalendarDays size={14} />
             {date}
           </span>
-          <span className="flex items-center justify-center gap-1 rounded-full bg-cream px-2 py-2">
+          <span className="flex items-center justify-center gap-1 rounded-full bg-[#f4eadb] px-2 py-2">
             <Heart size={14} />
             {photo.vote_count}
           </span>
-          <span className="flex items-center justify-center gap-1 rounded-full bg-cream px-2 py-2">
+          <span className="flex items-center justify-center gap-1 rounded-full bg-[#f4eadb] px-2 py-2">
             <MessageCircle size={14} />
             {photo.comment_count}
           </span>
         </div>
         <button
-          className={`heart-pop flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black transition active:scale-95 ${
+          className={`heart-pop flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition active:scale-95 ${
             liked ? "bg-coral text-white" : "bg-cream text-ink"
           }`}
           onClick={() => onToggleVote(photo.id)}
