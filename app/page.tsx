@@ -66,7 +66,6 @@ export default function HomePage() {
   const [comments, setComments] = useState<PhotoComment[]>(demoComments);
   const [likedPhotoIds, setLikedPhotoIds] = useState<Set<string>>(new Set(["ph2"]));
   const [activeTab, setActiveTab] = useState("landing");
-  const [lastNonProjectorTab, setLastNonProjectorTab] = useState("gallery");
   const [gallerySort, setGallerySort] = useState<GallerySort>("recent");
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -326,7 +325,6 @@ export default function HomePage() {
   }
 
   function openProjector() {
-    setLastNonProjectorTab(activeTab === "landing" || activeTab === "join" ? "gallery" : activeTab);
     setActiveTab("projector");
   }
 
@@ -392,6 +390,7 @@ export default function HomePage() {
   }
 
   async function saveEventSettings(updates: Partial<Pick<Event, "name" | "description" | "cover_image" | "is_active" | "uploads_enabled">>) {
+    const previousEvent = event;
     const cleanedUpdates = {
       ...updates,
       name: updates.name?.trim() || event.name,
@@ -407,6 +406,7 @@ export default function HomePage() {
         setAppStatus("idle");
         setAppMessage("");
       } catch (error) {
+        setEvent(previousEvent);
         setAppStatus("error");
         setAppMessage(error instanceof Error ? error.message : "No se pudieron guardar los ajustes.");
       }
@@ -485,7 +485,7 @@ export default function HomePage() {
           photos={visiblePhotos}
           photoRanking={photoRanking}
           participantRanking={participantRanking}
-          onExit={() => setActiveTab(lastNonProjectorTab)}
+          onExit={() => setActiveTab("landing")}
         />
       );
     }
