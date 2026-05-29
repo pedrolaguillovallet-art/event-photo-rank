@@ -67,7 +67,13 @@ export function AdminPhotoTable({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-4">
-        <button className="rounded-[22px] bg-white p-4 text-left shadow-soft" onClick={onToggleUploads}>
+        <button
+          className="rounded-[22px] bg-white p-4 text-left shadow-soft"
+          onClick={() => {
+            setUploadsEnabled((current) => !current);
+            onToggleUploads();
+          }}
+        >
           <p className="text-sm font-bold text-ink/60">Subidas</p>
           <p className="mt-1 text-xl font-black text-ink">{event.uploads_enabled ? "Activas" : "Pausadas"}</p>
         </button>
