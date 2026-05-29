@@ -343,12 +343,14 @@ export default function HomePage() {
   }
 
   async function removePhoto(photoId: string) {
+    const previousPhotos = photos;
     setPhotos((current) => current.map((photo) => (photo.id === photoId ? { ...photo, is_visible: false } : photo)));
     if (!isDemoMode) {
       try {
         await hidePhoto(photoId);
         await refreshRemoteData(event, participant);
       } catch (error) {
+        setPhotos(previousPhotos);
         setAppStatus("error");
         setAppMessage(error instanceof Error ? error.message : "No se pudo ocultar la foto.");
       }
@@ -428,10 +430,6 @@ export default function HomePage() {
       );
     }
 
-    if (!event.is_active) {
-      return <ClosedScreen event={event} />;
-    }
-
     if (activeTab === "upload") {
       return (
         <UploadScreen
@@ -476,6 +474,10 @@ export default function HomePage() {
       );
     }
 
+    if (!event.is_active) {
+      return <ClosedScreen event={event} onAdmin={() => setActiveTab("admin")} onHome={() => setActiveTab("landing")} />;
+    }
+
     if (activeTab === "projector") {
       return (
         <ProjectorMode
@@ -502,7 +504,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen pb-24">
-      {activeTab !== "landing" && activeTab !== "join" && activeTab !== "projector" ? (
+      {activeTab !== "join" && activeTab !== "projector" ? (
         <EventHeader event={event} participant={participant ?? undefined} activeTab={activeTab} onTabChange={setActiveTab} />
       ) : null}
       <div className="mx-auto max-w-6xl px-4 py-6">{renderContent()}</div>
@@ -745,30 +747,65 @@ function ProfileScreen({ participant, photos, onJoin }: { participant: Participa
   const votes = mine.reduce((sum, photo) => sum + photo.vote_count, 0);
 
   return (
-    <section className="mx-auto max-w-xl rounded-[30px] bg-white p-6 shadow-soft">
-      <div className="grid h-20 w-20 place-items-center rounded-[28px] bg-violet text-4xl text-white shadow-lift">{participant.avatar_emoji}</div>
-      <h2 className="mt-5 text-3xl font-black text-ink">{participant.display_name}</h2>
-      <p className="mt-2 text-sm font-semibold text-ink/60">Tu participacion en este evento.</p>
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-cream p-4">
-          <p className="text-sm font-bold text-ink/55">Fotos</p>
-          <p className="text-3xl font-black text-ink">{mine.length}</p>
+    <section className="mx-auto max-w-5xl space-y-5">
+      <div className="rounded-[30px] bg-white p-6 shadow-soft">
+        <div className="grid h-20 w-20 place-items-center rounded-[28px] bg-violet text-4xl text-white shadow-lift">{participant.avatar_emoji}</div>
+        <h2 className="mt-5 text-3xl font-black text-ink">{participant.display_name}</h2>
+        <p className="mt-2 text-sm font-semibold text-ink/60">Tu participacion en este evento.</p>
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-cream p-4">
+            <p className="text-sm font-bold text-ink/55">Fotos</p>
+            <p className="text-3xl font-black text-ink">{mine.length}</p>
+          </div>
+          <div className="rounded-2xl bg-cream p-4">
+            <p className="text-sm font-bold text-ink/55">Votos recibidos</p>
+            <p className="text-3xl font-black text-coral">{votes}</p>
+          </div>
         </div>
-        <div className="rounded-2xl bg-cream p-4">
-          <p className="text-sm font-bold text-ink/55">Votos recibidos</p>
-          <p className="text-3xl font-black text-coral">{votes}</p>
+      </div>
+
+      <div className="rounded-[30px] bg-white p-5 shadow-soft">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-violet">Tus fotos</p>
+            <h3 className="mt-1 text-2xl font-black text-ink">Publicadas por ti</h3>
+          </div>
+          <span className="rounded-full bg-cream px-4 py-2 text-sm font-black text-ink">{mine.length}</span>
         </div>
+        {mine.length ? (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {mine.map((photo) => (
+              <article key={photo.id} className="overflow-hidden rounded-2xl bg-cream">
+                <img className="aspect-square w-full object-cover" src={photo.image_url} alt={photo.title ?? "Foto publicada"} />
+                <div className="p-3">
+                  <p className="truncate text-sm font-black text-ink">{photo.title || "Sin titulo"}</p>
+                  <p className="mt-1 text-xs font-semibold text-ink/55">{photo.vote_count} votos / {photo.comment_count} comentarios</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-5 rounded-2xl bg-cream p-4 text-sm font-semibold text-ink/60">Todavia no has publicado fotos en este evento.</p>
+        )}
       </div>
     </section>
   );
 }
 
-function ClosedScreen({ event }: { event: Event }) {
+function ClosedScreen({ event, onAdmin, onHome }: { event: Event; onAdmin: () => void; onHome: () => void }) {
   return (
     <section className="mx-auto max-w-xl rounded-[30px] bg-white p-8 text-center shadow-soft">
       <PartyPopper className="mx-auto text-gold" size={44} />
       <h2 className="mt-4 text-3xl font-black text-ink">{event.name} ha finalizado</h2>
       <p className="mt-2 text-sm font-semibold text-ink/60">Gracias por compartir tantos momentos. El ranking queda guardado para el organizador.</p>
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+        <button className="h-12 rounded-2xl bg-violet px-5 font-black text-white shadow-lift" onClick={onAdmin}>
+          Panel admin
+        </button>
+        <button className="h-12 rounded-2xl bg-cream px-5 font-black text-ink" onClick={onHome}>
+          Menu principal
+        </button>
+      </div>
     </section>
   );
 }
