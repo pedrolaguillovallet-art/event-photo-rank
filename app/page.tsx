@@ -679,7 +679,7 @@ function UploadScreen({
         <h2 className="mt-1 text-3xl font-black text-ink">Sube tu mejor momento</h2>
       </div>
       <div className="rounded-[30px] bg-white p-5 shadow-soft">
-        <input ref={fileInputRef} className="hidden" type="file" accept="image/*" capture="environment" onChange={onFileChange} />
+        <input ref={fileInputRef} className="hidden" type="file" accept="image/*,.heic,.heif" onChange={onFileChange} />
         <button
           className="grid min-h-72 w-full place-items-center rounded-[24px] border-2 border-dashed border-violet/30 bg-cream text-center"
           onClick={onChooseFile}
