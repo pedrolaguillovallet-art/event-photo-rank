@@ -21,7 +21,7 @@ export function EventHeader({ event, participant, activeTab, onTabChange }: Even
   return (
     <header className="sticky top-0 z-30 border-b border-white/70 bg-cream/85 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-        <button className="flex min-w-0 items-center gap-3 text-left" onClick={() => onTabChange("gallery")}>
+        <button className="flex min-w-0 items-center gap-3 text-left" onClick={() => onTabChange("landing")}>
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-violet text-white shadow-lift">
             <Crown size={22} />
           </span>
