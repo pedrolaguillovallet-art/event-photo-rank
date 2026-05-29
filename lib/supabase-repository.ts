@@ -147,8 +147,11 @@ export async function createComment(photoId: string, participantId: string, text
 
 export async function hidePhoto(photoId: string): Promise<void> {
   if (!supabase) throw new Error("Supabase no esta configurado.");
+  const rpcResult = await supabase.rpc("admin_hide_photo", { target_photo_id: photoId });
+  if (!rpcResult.error) return;
+
   const { error } = await supabase.from("photos").update({ is_visible: false }).eq("id", photoId);
-  if (error) throw error;
+  if (error) throw rpcResult.error;
 }
 
 export async function updatePhotoFeatured(photoId: string, isFeatured: boolean): Promise<Photo> {
