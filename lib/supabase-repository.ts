@@ -8,13 +8,25 @@ export async function getEventBySlug(slug: string): Promise<Event | null> {
   return data;
 }
 
-export async function createParticipant(eventId: string, displayName: string, avatarEmoji: string): Promise<Participant> {
+export async function createParticipant(eventId: string, displayName: string, avatarEmoji: string, authUserId?: string | null): Promise<Participant> {
   if (!supabase) throw new Error("Supabase no esta configurado.");
   const { data, error } = await supabase
     .from("participants")
-    .insert({ event_id: eventId, display_name: displayName, avatar_emoji: avatarEmoji })
+    .insert({ event_id: eventId, display_name: displayName, avatar_emoji: avatarEmoji, auth_user_id: authUserId ?? null })
     .select("*")
     .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getParticipantByAuthUser(eventId: string, authUserId: string): Promise<Participant | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("participants")
+    .select("*")
+    .eq("event_id", eventId)
+    .eq("auth_user_id", authUserId)
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -139,6 +151,18 @@ export async function hidePhoto(photoId: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function updatePhotoFeatured(photoId: string, isFeatured: boolean): Promise<Photo> {
+  if (!supabase) throw new Error("Supabase no esta configurado.");
+  const { data, error } = await supabase
+    .from("photos")
+    .update({ is_featured: isFeatured })
+    .eq("id", photoId)
+    .select("*, participant:participants(*)")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function updateUploadsEnabled(eventId: string, uploadsEnabled: boolean): Promise<Event> {
   if (!supabase) throw new Error("Supabase no esta configurado.");
   const { data, error } = await supabase
@@ -147,6 +171,13 @@ export async function updateUploadsEnabled(eventId: string, uploadsEnabled: bool
     .eq("id", eventId)
     .select("*")
     .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateEventSettings(eventId: string, updates: Partial<Pick<Event, "name" | "description" | "cover_image" | "is_active" | "uploads_enabled">>): Promise<Event> {
+  if (!supabase) throw new Error("Supabase no esta configurado.");
+  const { data, error } = await supabase.from("events").update(updates).eq("id", eventId).select("*").single();
   if (error) throw error;
   return data;
 }
